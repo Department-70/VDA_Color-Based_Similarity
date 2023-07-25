@@ -1,0 +1,4 @@
+opencv-python
+tensorflow
+scikit-learn
+umap-learn
