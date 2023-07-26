@@ -1,6 +1,9 @@
 matplotlib
 numpy
 opencv-python
+#opensimplex
+perlin-noise
+Pillow
 scikit-learn
 tensorflow
 umap-learn
