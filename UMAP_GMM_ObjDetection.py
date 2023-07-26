@@ -315,6 +315,8 @@ if __name__ == "__main__":
             # Take the heatmap and apply a Sobel filter
             # Calculate multiple independant clusters
             # Evaluate results
+            # ZAK - Have we considered putting the heatmap through an 'anti-perlin noise filter'? For example,
+            # Randomness should produce perlin noise, the inverse should produce nothing?
             
         counter += 1
         
