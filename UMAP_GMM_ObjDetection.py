@@ -306,9 +306,9 @@ if __name__ == "__main__":
             
             plt.tight_layout()
                 
-            # plt.title('Color-Based Gestalt Similarity')
-            plt.savefig("results/results_" + file_name + 'jpg')
-            plt.show()
+            plt.title('Color-Based Gestalt Similarity')
+            plt.savefig('results/results_' + file_name + '.jpg')
+            #plt.show()
             
             
             
