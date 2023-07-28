@@ -203,6 +203,14 @@ def draw_diagonal_lines_on_background(blended_image, binary_image, line_size=20)
 
     return output_image
 
+
+"""
+===================================================================================================
+    Step 4: Calculate the 'camo-ness' of the heat map against the ground truth.
+    This could be 
+===================================================================================================
+"""
+
 """
 ===================================================================================================
     Helper Function 
@@ -283,26 +291,34 @@ if __name__ == "__main__":
             print("Elapsed time:", elapsed_time, "seconds")
             
             # Assuming you have the color heatmap numpy array and the binary image numpy array
-            # outlined_heatmap = add_outline_to_heatmap(heatmap, binary_image_array)
+            outlined_heatmap = add_outline_to_heatmap(heatmap, binary_image_array)
             
             # Apply the colormap as a mask onto the original image
             masked_image = apply_mask_with_alpha(image_array, heatmap)
             
-            # result = draw_diagonal_lines_on_background(masked_image, binary_image_array)
+            result = draw_diagonal_lines_on_background(masked_image, binary_image_array)
             
             # Assuming you have the image, color_heatmap, outlined_heatmap, and binary_image arrays
             rendered_image = render_object_with_colors(file_name, masked_image, heatmap, binary_image_array)
                     
             
             # Create a side-by-side plot of the original image and the heatmap
-            fig, axs = plt.subplots(1, 2, figsize=(10, 5))
-            axs[0].imshow(image)
-            axs[0].set_title("Original Image")
-            axs[0].axis('off')
-            
-            axs[1].imshow(rendered_image)
-            axs[1].set_title("Color Heatmap ({} Clusters)".format(num_clusters))
+            fig, axs = plt.subplots(1, 4, figsize=(10, 5))
+            axs[0].imshow(gt)
+            axs[0].set_title("Ground Truth")
+            axs[0].axis("off")
+
+            axs[1].imshow(image)
+            axs[1].set_title("Original Image")
             axs[1].axis('off')
+            
+            axs[2].imshow(rendered_image)
+            axs[2].set_title("Color Heatmap ({} Clusters)".format(num_clusters))
+            axs[2].axis('off')
+
+            axs[3].imshow(result)
+            axs[3].set_title("Color Heatmap ({} Clusters)".format(num_clusters))
+            axs[3].axis('off')
             
             plt.tight_layout()
                 
