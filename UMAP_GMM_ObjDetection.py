@@ -84,7 +84,7 @@ def color_heatmap(image, num_clusters=None):
     smoothed_image = gray_image.filter(ImageFilter.GaussianBlur(radius=3))
 
     # Reshape the image to a 2D array of pixels
-    pixels = np.array(smoothed_image).reshape(-1, 1)
+    pixels = np.array(gray_image).reshape(-1, 1)
 
     # Determine the number of clusters if not provided
     if num_clusters is None:
@@ -105,7 +105,7 @@ def color_heatmap(image, num_clusters=None):
     # Create a heatmap based on the cluster labels
     heatmap = cmap(segmented / (num_clusters - 1))
 
-    return heatmap, num_clusters
+    return heatmap, num_clusters, cmap
 
 """
 ===================================================================================================
@@ -210,6 +210,24 @@ def draw_diagonal_lines_on_background(blended_image, binary_image, line_size=20)
     This could be 
 ===================================================================================================
 """
+def create_histogram(heatmap, color_list: ListedColormap):
+    ## 1. Add alpha channel to the color map for comparison purposes
+    ## 2. compare heatmap color pixel-by-pixel (ew) and organize by color?
+    ### 2.1. Create dictionary for histogram to organize the following information:
+    ###     - Color Name: Key
+    ###     - RGBA value as list
+    ###     - Number of pixels of that color
+    ###     - Inside/Outside (do later)
+
+    color_histo = dict()
+    for color in color_list.colors:
+        color_histo[str(color)] = 0
+
+    for i in range(len(heatmap)):
+        for j in range(len(heatmap[i])):
+            print(color_histo[str(heatmap[i][j][:3])])
+
+    pass
 
 """
 ===================================================================================================
@@ -240,13 +258,13 @@ def apply_mask_with_alpha(image_array, mask_array, alpha=0.7):
     blended_image[..., 3] = 255
 
     return blended_image
-
 """
 ===================================================================================================
     Main
 ===================================================================================================
 """
 if __name__ == "__main__":
+
     # Counter
     counter = 1
         
@@ -269,7 +287,7 @@ if __name__ == "__main__":
         
         # Add alpha channel to image_array
         image_array = np.concatenate([image_array, np.ones_like(image_array[..., :1])], axis=2)
-        image_array[..., 3] = 255
+        image_array[..., 3] = 0
         
         binary_image_array = np.array(gt)
        
@@ -282,7 +300,11 @@ if __name__ == "__main__":
             start_time = time.time()
             
             # num_clusters = 5
-            heatmap, num_clusters = color_heatmap(image)
+            heatmap, num_clusters, cmap = color_heatmap(image)
+
+            # NEW CODE
+            create_histogram(heatmap, cmap)
+            # END NEW CODE
             
             # Calculate the elapsed time
             elapsed_time = time.time() - start_time
@@ -303,26 +325,27 @@ if __name__ == "__main__":
                     
             
             # Create a side-by-side plot of the original image and the heatmap
-            fig, axs = plt.subplots(1, 4, figsize=(10, 5))
-            axs[0].imshow(gt)
-            axs[0].set_title("Ground Truth")
-            axs[0].axis("off")
+            fig, axs = plt.subplots(2, 2, figsize=(10, 5))
 
-            axs[1].imshow(image)
-            axs[1].set_title("Original Image")
-            axs[1].axis('off')
+            axs[0][0].imshow(image)
+            axs[0][0].set_title("Original Image")
+            axs[0][0].axis('off')
             
-            axs[2].imshow(rendered_image)
-            axs[2].set_title("Color Heatmap ({} Clusters)".format(num_clusters))
-            axs[2].axis('off')
+            axs[0][1].imshow(rendered_image)
+            axs[0][1].set_title("Color Heatmap ({} Clusters)".format(num_clusters))
+            axs[0][1].axis('off')
 
-            axs[3].imshow(result)
-            axs[3].set_title("Color Heatmap ({} Clusters)".format(num_clusters))
-            axs[3].axis('off')
+            axs[1][0].imshow(heatmap)
+            axs[1][0].set_title("Raw Heatmap")
+            axs[1][0].axis("off")
+
+            axs[1][1].imshow(masked_image)
+            axs[1][1].set_title("Masked Image")
+            axs[1][1].axis("off")
             
             plt.tight_layout()
                 
-            plt.title('Color-Based Gestalt Similarity')
+            #plt.title('Color-Based Gestalt Similarity')
             plt.savefig('results/results_' + file_name + '.jpg')
             #plt.show()
             
@@ -336,5 +359,5 @@ if __name__ == "__main__":
             
         counter += 1
         
-        if counter == 6001:
+        if counter == 6:
             break

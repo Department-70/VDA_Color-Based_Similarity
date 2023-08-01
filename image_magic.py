@@ -1,15 +1,16 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from perlin_noise import PerlinNoise as PN
-from PIL import Image
 import scipy.ndimage as filter
+import noise
+
+from PIL import Image
 
 # Make an image consisting of perlin noise
 def make_a_noise():
     parx = 500
     pary = 500
-    noise = PN(octaves=5, seed=1)
-    pic = np.array([[noise([i/parx, j/pary]) * 0.1 for j in range(pary)] for i in range(parx)])
+    pnoise2 = noise(parx, pary, octaves=4, persistence=0.5)
+    pic = np.array([[pnoise2([i/parx, j/pary]) * 0.1 for j in range(pary)] for i in range(parx)])
 
     print(pic)
     plt.imshow(pic, cmap='gray')
