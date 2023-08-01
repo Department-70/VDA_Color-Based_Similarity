@@ -226,6 +226,8 @@ def create_histogram(heatmap, color_list: ListedColormap):
     for i in range(len(heatmap)):
         for j in range(len(heatmap[i])):
             print(color_histo[str(heatmap[i][j][:3])])
+            j += 1
+        i += 1
 
     pass
 
