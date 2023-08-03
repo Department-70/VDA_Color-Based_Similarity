@@ -471,11 +471,14 @@ if __name__ == "__main__":
             axs[1][1].set_title("Masked Image")
             axs[1][1].axis("off")'''
             
+            # TODO: Need to normalize these values. Right now the histogram compares true values
+            # and not percentages of whole
             catagories = ['One', 'Two', 'Three', 'Four', 'Five']
-            fig, axs = plt.subplots(1, 2, figsize=(10,5))
+            fig, axs = plt.subplots(figsize=(10,5))
 
-            axs[0].bar(catagories, color_distro_in)
-            axs[1].bar(catagories, color_distro_out)
+            axs.set_title('Distribtuion of colors ()')
+            axs.bar(catagories, color_distro_in, width=0.2, color='b', align='center')
+            axs.bar(catagories, color_distro_out, width=0.2, color='r', align='edge')
             
             plt.tight_layout()
                 
