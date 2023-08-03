@@ -210,7 +210,7 @@ def draw_diagonal_lines_on_background(blended_image, binary_image, line_size=20)
     This could be 
 ===================================================================================================
 """
-def create_histogram(heatmap, color_list: ListedColormap):
+def create_histogram(heatmap, color_list: ListedColormap, ground_truth):
     ## 1. Add alpha channel to the color map for comparison purposes
     ## 2. compare heatmap color pixel-by-pixel (ew) and organize by color?
     ### 2.1. Create dictionary for histogram to organize the following information:
@@ -219,18 +219,29 @@ def create_histogram(heatmap, color_list: ListedColormap):
     ###     - Number of pixels of that color
     ###     - Inside/Outside (do later)
 
-    color_histo = dict()
-    for color in color_list.colors:
-        color_histo[str(color)] = 0
+    # reshape the arrays into matching sizes
+    pixels = heatmap.reshape(np.shape(heatmap)[0]*np.shape(heatmap)[1], np.shape(heatmap)[2])
+    gt = ground_truth.reshape(np.shape(ground_truth)[0]*np.shape(ground_truth)[1])
+    colors = []
+    for v in color_list.colors:
+        vv = v.tolist()
+        vv.append(1.)
+        colors.append(vv)
 
-    for i in range(len(heatmap)):
-        for j in range(len(heatmap[i])):
-            print(color_histo[str(heatmap[i][j][:3])])
-            j += 1
-        i += 1
+    colors = np.array(colors)
+    buckets = [(0,0)] * len(colors)
 
-    pass
+    # update the color map to 
 
+    for i in range(len(pixels)):
+        for j in range(len(colors)):
+            if np.all(colors[j] == pixels[i]):
+                if(gt[i] == 255):
+                    buckets[j][1] += 1
+                else:
+                    buckets[j][0] += 1
+
+    return buckets
 """
 ===================================================================================================
     Helper Function 
@@ -305,7 +316,7 @@ if __name__ == "__main__":
             heatmap, num_clusters, cmap = color_heatmap(image)
 
             # NEW CODE
-            create_histogram(heatmap, cmap)
+            histo_data = create_histogram(heatmap, cmap, np.array(gt))
             # END NEW CODE
             
             # Calculate the elapsed time
@@ -327,7 +338,7 @@ if __name__ == "__main__":
                     
             
             # Create a side-by-side plot of the original image and the heatmap
-            fig, axs = plt.subplots(2, 2, figsize=(10, 5))
+            '''fig, axs = plt.subplots(2, 2, figsize=(10, 5))
 
             axs[0][0].imshow(image)
             axs[0][0].set_title("Original Image")
@@ -343,7 +354,11 @@ if __name__ == "__main__":
 
             axs[1][1].imshow(masked_image)
             axs[1][1].set_title("Masked Image")
-            axs[1][1].axis("off")
+            axs[1][1].axis("off")'''
+            
+            catagories = ['One', 'Two', 'Three', 'Four', 'Five']
+            fig, ax = plt.subplots(figsize=(10,5))
+            ax.bar(catagories, histo_data)
             
             plt.tight_layout()
                 
