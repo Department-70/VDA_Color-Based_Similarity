@@ -223,7 +223,8 @@ def create_histogram(heatmap, color_list: ListedColormap, ground_truth):
         colors.append(vv)
 
     colors = np.array(colors)
-    buckets = [(0,0)] * len(colors)
+    out_buckets = [0] * len(colors)
+    in_buckets = [0]*len(colors)
 
     # update the color map to 
 
@@ -231,11 +232,11 @@ def create_histogram(heatmap, color_list: ListedColormap, ground_truth):
         for j in range(len(colors)):
             if np.all(colors[j] == pixels[i]):
                 if(gt[i] == 255):
-                    buckets[j][1] += 1
+                    in_buckets[j] += 1
                 else:
-                    buckets[j][0] += 1
+                    out_buckets[j] += 1
 
-    return buckets
+    return out_buckets, in_buckets
 """
 ===================================================================================================
     Step 5: Evaluate the color distributions & patterns
@@ -436,7 +437,7 @@ if __name__ == "__main__":
             heatmap, num_clusters, cmap = color_heatmap(image)
 
             # NEW CODE
-            histo_data = create_histogram(heatmap, cmap, np.array(gt))
+            color_distro_out, color_distro_in = create_histogram(heatmap, cmap, np.array(gt))
             # END NEW CODE
             
             # Calculate the elapsed time
@@ -471,8 +472,10 @@ if __name__ == "__main__":
             axs[1][1].axis("off")'''
             
             catagories = ['One', 'Two', 'Three', 'Four', 'Five']
-            fig, ax = plt.subplots(figsize=(10,5))
-            ax.bar(catagories, histo_data)
+            fig, axs = plt.subplots(1, 2, figsize=(10,5))
+
+            axs[0].bar(catagories, color_distro_in)
+            axs[1].bar(catagories, color_distro_out)
             
             plt.tight_layout()
                 
