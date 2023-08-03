@@ -137,6 +137,13 @@ def add_outline_to_heatmap(color_heatmap, binary_image, outline_thickness=5):
             object with the segmented colors from the first heatmap
 ===================================================================================================
 """
+def apply_ordered_dithering(values, dither_matrix):
+    def dither_element(value):
+        return 255 if value > dither_matrix else 0
+
+    dither_element_vectorized = np.vectorize(dither_element)
+    return dither_element_vectorized(values)
+
 def render_object_with_colors(file_name, image, color_heatmap, binary_image):    
     # Convert the binary image to boolean
     mask = binary_image.astype(bool)
@@ -147,6 +154,17 @@ def render_object_with_colors(file_name, image, color_heatmap, binary_image):
     # Ensure both image and rendered_image have the same number of channels
     if rendered_image.shape[2] == 4 and image.shape[2] == 3:
         image = np.concatenate([image, np.ones_like(image[..., :1])], axis=2)
+        
+    # Define ordered dithering matrices for different colors
+    dither_matrix_green = np.array([[0, 128, 32, 160],
+                                    [192, 64, 224, 96],
+                                    [48, 176, 16, 144],
+                                    [240, 112, 208, 80]])
+
+    dither_matrix_purple = np.array([[192, 64, 224, 96],
+                                     [48, 176, 16, 144],
+                                     [240, 112, 208, 80],
+                                     [0, 128, 32, 160]])
 
     # Loop over the mask's pixels and set the corresponding pixels in rendered_image
     for i in range(rendered_image.shape[0]):
@@ -155,7 +173,20 @@ def render_object_with_colors(file_name, image, color_heatmap, binary_image):
                 rendered_image[i, j] = image[i, j]
                 # print('image_value = ' + str(image[i, j]))
             else:
-                rendered_image[i, j] = color_heatmap[i, j] * 255
+                # Get the color heatmap value for the current pixel
+                color_value = color_heatmap[i, j] * 255
+
+                # Determine which cluster the pixel belongs to
+                cluster = np.argmax(color_heatmap[i, j])
+
+                # Apply the appropriate dithering based on the cluster color
+                if cluster == 0:
+                    dither_value = dither_matrix_green[i % 4, j % 4]
+                else:
+                    dither_value = dither_matrix_purple[i % 4, j % 4]
+
+                rendered_image[i, j] = apply_ordered_dithering(color_value, dither_value)
+                #rendered_image[i, j] = color_heatmap[i, j] * 255
                 # print('color_heatmap = ' + str(color_heatmap[i, j] * 255))
 
     # Convert the rendered_image to unsigned integer data type
@@ -165,43 +196,6 @@ def render_object_with_colors(file_name, image, color_heatmap, binary_image):
     cv2.imwrite('./color_gestalt_output/' + file_name + '.png', rendered_image)
 
     return rendered_image
-
-def draw_diagonal_lines_on_background(blended_image, binary_image, line_size=20):
-    # Convert the binary image to boolean
-    mask = binary_image.astype(bool)
-
-    # Copy the blended_image
-    output_image = blended_image.copy()
-
-    # Create a diagonal lines pattern with transparency
-    line_pattern = np.ones((line_size, line_size, 4), dtype=np.uint8) * 255
-
-    # Set the diagonal lines to 0
-    for i in range(line_size):
-        line_pattern[i, i] = [0, 0, 0, 0]
-
-    # Iterate over the binary image and draw diagonal lines where black pixels are present
-    for i in range(output_image.shape[0]):
-        for j in range(output_image.shape[1]):
-            if not mask[i, j]:
-                # Calculate the region to place the diagonal lines centered at the current black pixel
-                line_start_i = max(0, i - line_size // 2)
-                line_start_j = max(0, j - line_size // 2)
-                line_end_i = min(output_image.shape[0], line_start_i + line_size)
-                line_end_j = min(output_image.shape[1], line_start_j + line_size)
-
-                # Adjust the dimensions of the diagonal lines pattern to fit within the region
-                line_pattern_height = line_end_i - line_start_i
-                line_pattern_width = line_end_j - line_start_j
-                line_pattern_adjusted = line_pattern[:line_pattern_height, :line_pattern_width]
-
-                # Draw the diagonal lines pattern at the current position
-                output_image[line_start_i:line_end_i, line_start_j:line_end_j] = line_pattern_adjusted
-
-    # Convert the rendered_image to unsigned integer data type
-    output_image = (output_image).astype(np.uint8)
-
-    return output_image
 
 
 """
@@ -242,6 +236,132 @@ def create_histogram(heatmap, color_list: ListedColormap, ground_truth):
                     buckets[j][0] += 1
 
     return buckets
+"""
+===================================================================================================
+    Step 5: Evaluate the color distributions & patterns
+===================================================================================================
+"""
+import mahotas.features
+
+def evaluate_background_patterns(rendered_image, binary_mask):
+    # Convert the rendered_image to grayscale
+    gray_image = np.dot(rendered_image[...,:3], [0.2989, 0.587, 0.114]).astype(np.uint8)
+
+    # Calculate the LBP image for the grayscale image
+    lbp_image = mahotas.features.lbp(gray_image, radius=1, points=8)
+
+    # Convert the binary_mask to a NumPy array and then to boolean
+    mask = np.array(binary_mask).astype(bool)
+
+    # Calculate Haralick texture features for the entire LBP image
+    haralick_features = mahotas.features.haralick(lbp_image)
+
+    # Get the pixels from the LBP image corresponding to the background
+    background_pixels = haralick_features[~mask]
+
+    # Calculate the average Haralick texture features for the background
+    average_haralick_features = np.mean(background_pixels, axis=0)
+
+    return average_haralick_features
+
+
+def evaluate_color_distribution(filename, colormap, rendered_image, binary_map):
+    # Calculate the mean color of the colormap (without alpha channel)
+    mean_colormap_color = np.mean(colormap[..., :3], axis=0)
+ 
+    # Calculate the mean color of the color heatmap (without alpha channel)
+    mean_color_heatmap = np.mean(rendered_image[..., :3], axis=(0, 1))
+ 
+    # Calculate the Euclidean distance between the mean colormap color and mean color heatmap
+    euclidean_distance = np.linalg.norm(mean_colormap_color - mean_color_heatmap)
+ 
+    # Create a mask to select pixels where the object is present
+    object_mask = np.logical_not(binary_map)
+ 
+    # Calculate the mean color for ground (black) and figure (white) regions
+    ground_color = np.mean(rendered_image[object_mask], axis=0)
+    figure_color = np.mean(rendered_image[np.logical_not(object_mask)], axis=0)
+ 
+    # Calculate the standard deviation for ground and figure regions
+    ground_std_dev = np.std(rendered_image[object_mask], axis=0)
+    figure_std_dev = np.std(rendered_image[np.logical_not(object_mask)], axis=0)
+ 
+    # Calculate the absolute difference in standard deviations
+    std_dev_diff = np.abs(ground_std_dev - figure_std_dev)
+ 
+    # Calculate the mean absolute error (MAE) between the colormap and rendered image (without alpha channel)
+    mae = np.mean(np.abs(colormap[..., :3] - rendered_image[..., :3]), axis=(0, 1))
+ 
+    # Calculate the root mean squared error (RMSE) between the colormap and rendered image (without alpha channel)
+    rmse = np.sqrt(np.mean((colormap[..., :3] - rendered_image[..., :3]) ** 2, axis=(0, 1)))
+ 
+    # Get the green and purple color components for the figure and the ground
+    green_values_figure = rendered_image[np.logical_not(object_mask)][:, 1]
+    purple_values_figure = rendered_image[np.logical_not(object_mask)][:, 2]
+ 
+    green_values_ground = rendered_image[object_mask][:, 1]
+    purple_values_ground = rendered_image[object_mask][:, 2]
+ 
+    # Plot histograms for green and purple color components in the figure
+    fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+    axes[0, 0].hist(green_values_figure.flatten(), bins=50, alpha=0.7, color='green', label='Green (Figure)')
+    axes[0, 0].set_title('Green Color Component Histogram (Figure)')
+    axes[0, 0].set_xlabel('Green Color Value')
+    axes[0, 0].set_ylabel('Frequency')
+    axes[0, 0].legend()
+ 
+    axes[0, 1].hist(purple_values_figure.flatten(), bins=50, alpha=0.7, color='purple', label='Purple (Figure)')
+    axes[0, 1].set_title('Purple Color Component Histogram (Figure)')
+    axes[0, 1].set_xlabel('Purple Color Value')
+    axes[0, 1].set_ylabel('Frequency')
+    axes[0, 1].legend()
+ 
+    # Plot histograms for green and purple color components in the ground
+    axes[1, 0].hist(green_values_ground.flatten(), bins=50, alpha=0.7, color='green', label='Green (Ground)')
+    axes[1, 0].set_title('Green Color Component Histogram (Ground)')
+    axes[1, 0].set_xlabel('Green Color Value')
+    axes[1, 0].set_ylabel('Frequency')
+    axes[1, 0].legend()
+ 
+    axes[1, 1].hist(purple_values_ground.flatten(), bins=50, alpha=0.7, color='purple', label='Purple (Ground)')
+    axes[1, 1].set_title('Purple Color Component Histogram (Ground)')
+    axes[1, 1].set_xlabel('Purple Color Value')
+    axes[1, 1].set_ylabel('Frequency')
+    axes[1, 1].legend()
+ 
+    # Save the histograms as an image
+    plt.savefig(f'./evaluation_results/{filename}_histograms.png')
+    plt.close()
+ 
+    # Save the evaluation results to a .txt file
+    with open('./evaluation_results/' + filename + '_evaluation_results.txt', 'w') as file:
+         file.write(f"Mean Colormap Color: {mean_colormap_color}\n")
+         file.write(f"Mean Color Heatmap: {mean_color_heatmap}\n")
+         file.write(f"Euclidean Distance: {euclidean_distance}\n")
+         file.write(f"Ground Color: {ground_color}\n")
+         file.write(f"Figure Color: {figure_color}\n")
+         file.write(f"Ground Std Dev: {ground_std_dev}\n")
+         file.write(f"Figure Std Dev: {figure_std_dev}\n")
+         file.write(f"Std Dev Difference: {std_dev_diff}\n")
+         file.write(f"Mean Absolute Error (MAE): {mae}\n")
+         file.write(f"Root Mean Squared Error (RMSE): {rmse}\n")
+         
+    # Return the evaluation metrics as a dictionary
+    evaluation_results = {
+         'mean_colormap_color': mean_colormap_color,
+         'mean_color_heatmap': mean_color_heatmap,
+         'euclidean_distance': euclidean_distance,
+         'ground_color': ground_color,
+         'figure_color': figure_color,
+         'ground_std_dev': ground_std_dev,
+         'figure_std_dev': figure_std_dev,
+         'std_dev_diff': std_dev_diff,
+         'mae': mae,
+         'rmse': rmse
+    }
+ 
+    return evaluation_results
+
 """
 ===================================================================================================
     Helper Function 
@@ -324,18 +444,12 @@ if __name__ == "__main__":
             
             # Print the elapsed time
             print("Elapsed time:", elapsed_time, "seconds")
-            
-            # Assuming you have the color heatmap numpy array and the binary image numpy array
-            outlined_heatmap = add_outline_to_heatmap(heatmap, binary_image_array)
-            
+                         
             # Apply the colormap as a mask onto the original image
             masked_image = apply_mask_with_alpha(image_array, heatmap)
             
-            result = draw_diagonal_lines_on_background(masked_image, binary_image_array)
-            
             # Assuming you have the image, color_heatmap, outlined_heatmap, and binary_image arrays
             rendered_image = render_object_with_colors(file_name, masked_image, heatmap, binary_image_array)
-                    
             
             # Create a side-by-side plot of the original image and the heatmap
             '''fig, axs = plt.subplots(2, 2, figsize=(10, 5))
@@ -365,16 +479,17 @@ if __name__ == "__main__":
             #plt.title('Color-Based Gestalt Similarity')
             plt.savefig('results/results_' + file_name + '.jpg')
             #plt.show()
-            
-            
-            
+
             # Take the heatmap and apply a Sobel filter
-            # Calculate multiple independant clusters
+            # Calculate multiple independent clusters
             # Evaluate results
+            evaluation_results = evaluate_color_distribution(file_name, heatmap, rendered_image, gt)
+            print(evaluation_results)
+        
             # ZAK - Have we considered putting the heatmap through an 'anti-perlin noise filter'? For example,
             # Randomness should produce perlin noise, the inverse should produce nothing?
             
         counter += 1
         
-        if counter == 6:
+        if counter == 6: #6001:
             break
