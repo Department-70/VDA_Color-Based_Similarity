@@ -438,6 +438,8 @@ if __name__ == "__main__":
 
             # NEW CODE
             color_distro_out, color_distro_in = create_histogram(heatmap, cmap, np.array(gt))
+            color_normal_out = [i/sum(color_distro_out) for i in color_distro_out]
+            color_normal_in = [i/sum(color_distro_in) for i in color_distro_in]
             # END NEW CODE
             
             # Calculate the elapsed time
@@ -477,8 +479,8 @@ if __name__ == "__main__":
             fig, axs = plt.subplots(figsize=(10,5))
 
             axs.set_title('Distribtuion of colors ()')
-            axs.bar(catagories, color_distro_in, width=0.2, color='b', align='center')
-            axs.bar(catagories, color_distro_out, width=0.2, color='r', align='edge')
+            axs.bar(catagories, color_normal_out, width=0.2, color=(cmap.colors), align='center')
+            axs.bar(catagories, color_normal_in, width=0.2, color=([color / 2 for color in cmap.colors]), align='edge')
             
             plt.tight_layout()
                 
