@@ -478,7 +478,7 @@ if __name__ == "__main__":
             catagories = ['One', 'Two', 'Three', 'Four', 'Five']
             fig, axs = plt.subplots(figsize=(10,5))
 
-            axs.set_title('Distribtuion of colors ()')
+            axs.set_title('Distribtuion of colors (Figure vs Ground)')
             axs.bar(catagories, color_normal_out, width=0.2, color=(cmap.colors), align='center')
             axs.bar(catagories, color_normal_in, width=0.2, color=([color / 2 for color in cmap.colors]), align='edge')
             
@@ -499,5 +499,5 @@ if __name__ == "__main__":
             
         counter += 1
         
-        if counter == 6: #6001:
+        if counter == 11: #6001:
             break
