@@ -480,7 +480,7 @@ if __name__ == "__main__":
 
             axs.set_title('Distribtuion of colors (Figure vs Ground)')
             axs.bar(catagories, color_normal_out, width=0.2, color=(cmap.colors), align='center')
-            axs.bar(catagories, color_normal_in, width=0.2, color=([color / 2 for color in cmap.colors]), align='edge')
+            axs.bar(catagories, color_normal_in, width=0.2, color=([255-cmap.colors for color in cmap.colors]), align='edge')
             
             plt.tight_layout()
                 
