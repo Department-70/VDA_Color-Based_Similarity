@@ -1,6 +1,7 @@
 import noise
 import numpy as np
 from PIL import Image, ImageFilter
+import matplotlib.pyplot as plt
 
 shape = (1024,1024)
 scale = 100.
@@ -19,6 +20,6 @@ for i in range(shape[0]):
                                     repeatx=1024,
                                     repeaty=1024,
                                     base=0)
-        
-image = Image.fromarray(world)
-image.convert("RGB").save('./noise.png')
+
+formatted_world = (world * 255 / np.max(world)).astype('uint8')
+image = Image.fromarray(formatted_world).save('./noise.png')

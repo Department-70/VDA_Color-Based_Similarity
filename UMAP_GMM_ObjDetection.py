@@ -455,7 +455,7 @@ if __name__ == "__main__":
             rendered_image = render_object_with_colors(file_name, masked_image, heatmap, binary_image_array)
             
             # Create a side-by-side plot of the original image and the heatmap
-            '''fig, axs = plt.subplots(2, 2, figsize=(10, 5))
+            fig, axs = plt.subplots(2, 2, figsize=(10, 5))
 
             axs[0][0].imshow(image)
             axs[0][0].set_title("Original Image")
@@ -471,17 +471,15 @@ if __name__ == "__main__":
 
             axs[1][1].imshow(masked_image)
             axs[1][1].set_title("Masked Image")
-            axs[1][1].axis("off")'''
+            axs[1][1].axis("off")
             
-            # TODO: Need to normalize these values. Right now the histogram compares true values
-            # and not percentages of whole
-            catagories = ['One', 'Two', 'Three', 'Four', 'Five']
+            '''catagories = ['One', 'Two', 'Three', 'Four', 'Five']
             fig, axs = plt.subplots(figsize=(10,5))
 
             axs.set_title('Distribtuion of colors (Figure vs Ground)')
             axs.bar(catagories, color_normal_out, width=0.2, color=(cmap.colors), align='center')
             axs.bar(catagories, color_normal_in, width=0.2, color=([255-cmap.colors for color in cmap.colors]), align='edge')
-            
+            '''
             plt.tight_layout()
                 
             #plt.title('Color-Based Gestalt Similarity')
