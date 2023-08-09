@@ -2,7 +2,7 @@
 """
 Created on Mon Jul 17 14:53:52 2023
 
-@author: Debra Hogue
+@authors: Debra Hogue, Zak Kastl
 
 UMAP reduction of images to use GMM for object detection?
 """
@@ -401,6 +401,7 @@ if __name__ == "__main__":
 
     # Counter
     counter = 1
+    percent_purple = []
         
     # Loop to iterate through dataset
     for files in os.scandir(image_root):
@@ -440,6 +441,8 @@ if __name__ == "__main__":
             color_distro_out, color_distro_in = create_histogram(heatmap, cmap, np.array(gt))
             color_normal_out = [i/sum(color_distro_out) for i in color_distro_out]
             color_normal_in = [i/sum(color_distro_in) for i in color_distro_in]
+            percent_purple.append((color_normal_out[4], color_normal_in[4]))
+            
             # END NEW CODE
             
             # Calculate the elapsed time
@@ -455,9 +458,9 @@ if __name__ == "__main__":
             rendered_image = render_object_with_colors(file_name, masked_image, heatmap, binary_image_array)
             
             # Create a side-by-side plot of the original image and the heatmap
-            fig, axs = plt.subplots(2, 2, figsize=(10, 5))
+            fig, axs = plt.subplots(figsize=(10, 5))
 
-            axs[0][0].imshow(image)
+            '''axs[0][0].imshow(image)
             axs[0][0].set_title("Original Image")
             axs[0][0].axis('off')
             
@@ -465,21 +468,20 @@ if __name__ == "__main__":
             axs[0][1].set_title("Color Heatmap ({} Clusters)".format(num_clusters))
             axs[0][1].axis('off')
 
-            axs[1][0].imshow(heatmap)
-            axs[1][0].set_title("Raw Heatmap")
-            axs[1][0].axis("off")
+            axs[0][2].imshow(heatmap)
+            axs[0][2].set_title("Raw Heatmap")
+            axs[0][2].axis("off")
 
-            axs[1][1].imshow(masked_image)
-            axs[1][1].set_title("Masked Image")
-            axs[1][1].axis("off")
+            axs[1][0].imshow(masked_image)
+            axs[1][0].set_title("Masked Image")
+            axs[1][0].axis("off")'''
             
-            '''catagories = ['One', 'Two', 'Three', 'Four', 'Five']
-            fig, axs = plt.subplots(figsize=(10,5))
-
-            axs.set_title('Distribtuion of colors (Figure vs Ground)')
+            catagories = ['One', 'Two', 'Three', 'Four', 'Five']
             axs.bar(catagories, color_normal_out, width=0.2, color=(cmap.colors), align='center')
-            axs.bar(catagories, color_normal_in, width=0.2, color=([255-cmap.colors for color in cmap.colors]), align='edge')
-            '''
+            axs.bar(catagories, color_normal_in, width=0.2, color='black', align='edge')
+            
+            axs.set_title('Distribtuion of colors (Figure vs Ground)')
+            
             plt.tight_layout()
                 
             #plt.title('Color-Based Gestalt Similarity')
@@ -491,11 +493,12 @@ if __name__ == "__main__":
             # Evaluate results
             evaluation_results = evaluate_color_distribution(file_name, heatmap, rendered_image, gt)
             print(evaluation_results)
+            print(percent_purple)
         
             # ZAK - Have we considered putting the heatmap through an 'anti-perlin noise filter'? For example,
             # Randomness should produce perlin noise, the inverse should produce nothing?
             
         counter += 1
         
-        if counter == 11: #6001:
+        if counter == 6001: #6001:
             break
