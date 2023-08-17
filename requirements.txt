@@ -1,8 +1,0 @@
-matplotlib
-numpy
-opencv-python
-perlin-noise
-Pillow
-scikit-learn
-tensorflow
-umap-learn

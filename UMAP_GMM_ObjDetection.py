@@ -46,7 +46,7 @@ def detect_object(image_matrix):
     embedding = reducer.fit_transform(image_matrix)
 
     # Define the number of clusters
-    n_clusters = 3
+    n_clusters = 5
 
     # Create a GMM object
     gmm = GaussianMixture(n_components=n_clusters,random_state=random_state)
@@ -438,10 +438,10 @@ if __name__ == "__main__":
             heatmap, num_clusters, cmap = color_heatmap(image)
 
             # NEW CODE
-            color_distro_out, color_distro_in = create_histogram(heatmap, cmap, np.array(gt))
-            color_normal_out = [i/sum(color_distro_out) for i in color_distro_out]
-            color_normal_in = [i/sum(color_distro_in) for i in color_distro_in]
-            percent_purple.append((color_normal_out[4], color_normal_in[4]))
+            #color_distro_out, color_distro_in = create_histogram(heatmap, cmap, np.array(gt))
+            #color_normal_out = [i/sum(color_distro_out) for i in color_distro_out]
+            #color_normal_in = [i/sum(color_distro_in) for i in color_distro_in]
+            #percent_purple.append((color_normal_out[4], color_normal_in[4]))
             
             # END NEW CODE
             
@@ -458,9 +458,9 @@ if __name__ == "__main__":
             rendered_image = render_object_with_colors(file_name, masked_image, heatmap, binary_image_array)
             
             # Create a side-by-side plot of the original image and the heatmap
-            fig, axs = plt.subplots(figsize=(10, 5))
+            fig, axs = plt.subplots(2, 2, figsize=(10, 5))
 
-            '''axs[0][0].imshow(image)
+            axs[0][0].imshow(image)
             axs[0][0].set_title("Original Image")
             axs[0][0].axis('off')
             
@@ -468,23 +468,22 @@ if __name__ == "__main__":
             axs[0][1].set_title("Color Heatmap ({} Clusters)".format(num_clusters))
             axs[0][1].axis('off')
 
-            axs[0][2].imshow(heatmap)
-            axs[0][2].set_title("Raw Heatmap")
-            axs[0][2].axis("off")
+            axs[1][0].imshow(heatmap)
+            axs[1][0].set_title("Raw Heatmap")
+            axs[1][0].axis("off")
 
-            axs[1][0].imshow(masked_image)
-            axs[1][0].set_title("Masked Image")
-            axs[1][0].axis("off")'''
+            axs[1][1].imshow(masked_image)
+            axs[1][1].set_title("Masked Image")
+            axs[1][1].axis("off")
             
-            catagories = ['One', 'Two', 'Three', 'Four', 'Five']
-            axs.bar(catagories, color_normal_out, width=0.2, color=(cmap.colors), align='center')
-            axs.bar(catagories, color_normal_in, width=0.2, color='black', align='edge')
-            
-            axs.set_title('Distribtuion of colors (Figure vs Ground)')
+            #catagories = ['One', 'Two', 'Three', 'Four', 'Five']
+            #axs.bar(catagories, color_normal_out, width=0.2, color=(cmap.colors), align='center')
+            #axs.bar(catagories, color_normal_in, width=0.2, color='black', align='edge')            
+            #axs.set_title('Distribtuion of colors (Figure vs Ground)')
             
             plt.tight_layout()
                 
-            #plt.title('Color-Based Gestalt Similarity')
+            plt.title('Color-Based Gestalt Similarity')
             plt.savefig('results/results_' + file_name + '.jpg')
             #plt.show()
 
